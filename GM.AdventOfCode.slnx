@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/2025/">
+    <Project Path="src/2025/GM.AdventOfCode._2025._1/GM.AdventOfCode._2025._1.csproj" Id="e052f34e-8ef0-4d42-9d28-1b071370f95b" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
