@@ -2,6 +2,7 @@
   <Folder Name="/2025/">
     <Project Path="src/2025/GM.AdventOfCode._2025._1/GM.AdventOfCode._2025._1.csproj" Id="e052f34e-8ef0-4d42-9d28-1b071370f95b" />
     <Project Path="src/2025/GM.AdventOfCode._2025._2/GM.AdventOfCode._2025._2.csproj" Id="548c3dc3-f51f-4bc5-a915-db28ca11d1d9" />
+    <Project Path="src/2025/GM.AdventOfCode._2025._3/GM.AdventOfCode._2025._3.csproj" Id="0aea86b8-fbb2-434e-aa4e-6d65da17dddf" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
