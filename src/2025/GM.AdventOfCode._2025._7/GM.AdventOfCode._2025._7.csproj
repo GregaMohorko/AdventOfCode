@@ -21,8 +21,4 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="GM.Utility" Version="1.7.0" />
-  </ItemGroup>
-
 </Project>
