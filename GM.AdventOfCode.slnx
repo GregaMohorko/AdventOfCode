@@ -8,6 +8,7 @@
     <Project Path="src/2025/GM.AdventOfCode._2025._6/GM.AdventOfCode._2025._6.csproj" Id="04ab2459-820d-4e9b-abb1-1d93d6589aa9" />
     <Project Path="src/2025/GM.AdventOfCode._2025._7/GM.AdventOfCode._2025._7.csproj" Id="33d8a026-312a-4ca4-8dbd-00f65177bc18" />
     <Project Path="src/2025/GM.AdventOfCode._2025._8/GM.AdventOfCode._2025._8.csproj" Id="421eba5e-c23a-4563-8af8-596cb28d7369" />
+    <Project Path="src/2025/GM.AdventOfCode._2025._9/GM.AdventOfCode._2025._9.csproj" Id="27811a49-8275-4f1c-8a36-d5fece64481f" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
