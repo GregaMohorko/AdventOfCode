@@ -34,10 +34,14 @@ foreach(var process in processes) {
 	Console.WriteLine($"Part Two: {process.CalculatedPartTwo}.");
 	if(process.ExpectedPartTwo != null && process.CalculatedPartTwo != process.ExpectedPartTwo.Value) {
 		Console.WriteLine($"Wrong part two. Should be {process.ExpectedPartTwo.Value}.");
+		Console.WriteLine("Press a key to continue ...");
+		Console.ReadKey(true);
+		return;
+	} else {
+		Console.WriteLine("Press a key to continue ...");
+		Console.ReadKey(true);
 	}
 
-	Console.WriteLine("Press a key to continue ...");
-	Console.ReadKey(true);
 	Console.WriteLine();
 }
 
@@ -55,12 +59,12 @@ class Process
 	{
 		string resultsFile = $"../../../results{InputFileName}.txt";
 
-		void WriteResultToFile(int id, long buttonPresses)
+		void WriteResultToFile(ulong id, long buttonPresses)
 		{
 			using var stream = File.AppendText(resultsFile);
 			stream.WriteLine($"{id}=>{buttonPresses}");
 		}
-		long? TryGetResultFromFile(int id)
+		long? TryGetResultFromFile(ulong id)
 		{
 			if(File.Exists(resultsFile) == false) {
 				return null;
@@ -166,7 +170,7 @@ class Process
 		// part two
 		{
 			List<long> fewestButtonPressesPerMachine = [];
-			Output.InitialMachinesCount = machines.Count;
+			Output.InitialMachinesCount = (ulong)machines.Count;
 			for(int i = 0; i < machines.Count; ++i) {
 				var machine = machines[i];
 				// find the fewest button presses to reach the target joltage requirements
@@ -193,7 +197,9 @@ class Process
 						}
 
 						fewestButtonPresses = machine.GetFewestButtonPressesForPartTwo();
-						WriteResultToFile(machine.Id, fewestButtonPresses);
+						if(ReadFromFile) {
+							WriteResultToFile(machine.Id, fewestButtonPresses);
+						}
 
 						if(Output.DebuggingPartTwo) {
 							Console.WriteLine("End!");
@@ -214,7 +220,7 @@ static class Output
 {
 	public static bool ProgressPartTwo = true;
 	public static bool DebuggingPartTwo = false;
-	public static int InitialMachinesCount;
+	public static ulong InitialMachinesCount;
 }
 
 class Machine
@@ -231,8 +237,8 @@ class Machine
 	}
 	public List<Joltage>? JoltageRequirements { get; init; }
 
-	public static int s_idCounter = 0;
-	public int Id { get; } = ++s_idCounter;
+	public static ulong s_idCounter = 0;
+	public ulong Id { get; } = ++s_idCounter;
 	public Machine? Source { get; private init; }
 	public List<Button> PressedButtons { get; init; } = [];
 
@@ -269,7 +275,7 @@ class Machine
 		}
 	}
 
-	public int GetFewestButtonPressesForPartTwo()
+	public long GetFewestButtonPressesForPartTwo()
 	{
 		return TryGetFewestButtonPressesForPartTwo()!.Value;
 	}
@@ -280,9 +286,11 @@ class Machine
 	private int maxSubtract;
 	private int output_buttonIndex;
 	private int output_buttonCount;
-	private int? TryGetFewestButtonPressesForPartTwo()
+	private int output_machineCopyIndex;
+	private int output_machineCopiesCount;
+	private long? TryGetFewestButtonPressesForPartTwo()
 	{
-		int buttonPressesCount = 0;
+		long buttonPressesCount = 0;
 		while(true) {
 			List<Joltage> joltagesNotAtTargetYet = JoltageRequirements!
 					.Where(j => j.CanBeIncreased)
@@ -324,10 +332,12 @@ class Machine
 					// start with those buttons that can be pressed the least amount of times
 					//.OrderBy(b => b.AvailablePressesCount)
 					// start with those that affect the most number of joltages
-					.OrderByDescending(b => b.Joltages!.Count)
+					//.OrderByDescending(b => b.Joltages!.Count)
+					// start with those that affect the least number of joltages
+					.OrderBy(b => b.Joltages!.Count)
 					.ToList();
 
-				int? pressesFurtherDown = null;
+				List<(Machine Machine, Button ButtonToPress, int PressCount)> copiesFurtherDown = [];
 				// this subtract is stupid, could be determined more smarter
 				maxSubtract = buttonsThatCanBePressed.Max(b => b.AvailablePressesCount) - 1;
 				if(Id < Output.InitialMachinesCount) {
@@ -346,57 +356,83 @@ class Machine
 						}
 						skippedAll = false;
 
-						if(Output.ProgressPartTwo) {
-							// only output initial machines
-							if(Id < Output.InitialMachinesCount) {
-								s_progressMessagePrefix += $" (Subtract={subtractPressesCount}/{maxSubtract}. Button={output_buttonIndex}/{output_buttonCount}.)";
-								Console.WriteLine(s_progressMessagePrefix);
-								s_progress_stopWatch = new();
-								s_progress_stopWatch.Start();
-							} else {
-								if(s_progress_stopWatch!.ElapsedMilliseconds >= 5000) {
-									Console.WriteLine($"{s_progressMessagePrefix} Path={GetOutputPath_AsProgress()}. (Subtract={subtractPressesCount}/{maxSubtract}. Button={output_buttonIndex}/{output_buttonCount}.)");
-									s_progress_stopWatch.Restart();
-								}
-							}
-						}
+						// output before going to BFS
+						//if(Output.ProgressPartTwo) {
+						//	// only output initial machines
+						//	if(Id < Output.InitialMachinesCount) {
+						//		s_progressMessagePrefix += $" (Subtract={subtractPressesCount}/{maxSubtract}. Button={output_buttonIndex}/{output_buttonCount}.)";
+						//		Console.WriteLine(s_progressMessagePrefix);
+						//		s_progress_stopWatch = new();
+						//		s_progress_stopWatch.Start();
+						//	} else {
+						//		if(s_progress_stopWatch!.ElapsedMilliseconds >= 5000) {
+						//			Console.WriteLine($"{s_progressMessagePrefix} Path={GetOutputPath_AsProgress()}. (Subtract={subtractPressesCount}/{maxSubtract}. Button={output_buttonIndex}/{output_buttonCount}.)");
+						//			s_progress_stopWatch.Restart();
+						//		}
+						//	}
+						//}
 
 						var machineCopy = new Machine(this);
 						machineCopy.InitializeJoltagesAndButtons();
 
-						// press this button in the machine copy
-						var buttonInTheCopy = machineCopy.ButtonWiringSchematics!.Single(b => b.Source == buttonThatCanBePressed);
-						buttonPressesCount += pressCount;
-						buttonInTheCopy.Press(pressCount);
-
-						// check if it's still possible to resolve the problem from here onward
-						if(machineCopy.JoltageRequirements!.Any(j =>
-							j.CanBeIncreased
-							&& j.Buttons!.Count == 0)
-							) {
-							// there are uncompleted joltages without buttons to press them
-							continue;
-						}
-
-						// continue further down
-						pressesFurtherDown = machineCopy.TryGetFewestButtonPressesForPartTwo();
-						if(pressesFurtherDown != null) {
-							// let's assume that this is the best option
-							break;
-						}
-					}
-					if(pressesFurtherDown != null) {
-						break;
+						// should continue further down
+						copiesFurtherDown.Add((machineCopy, buttonThatCanBePressed, pressCount));
 					}
 					if(skippedAll) {
 						break;
 					}
 				}
-				if(pressesFurtherDown == null) {
+
+				long? bestPressesFurtherDown = null;
+				output_machineCopiesCount = copiesFurtherDown.Count;
+				for(output_machineCopyIndex = 0; output_machineCopyIndex < copiesFurtherDown.Count; ++output_machineCopyIndex) {
+					var (machineCopy, buttonToPrePress, pressCount) = copiesFurtherDown[output_machineCopyIndex];
+
+					long initialPresses = pressCount;
+					if(bestPressesFurtherDown != null
+						&& initialPresses >= bestPressesFurtherDown.Value
+						) {
+						// already more
+						// can stop
+						continue;
+					}
+
+					// press this button in the machine copy
+					var buttonInTheCopy = machineCopy.ButtonWiringSchematics!
+						.Single(b => b.Source == buttonToPrePress);
+					buttonInTheCopy.Press(pressCount);
+
+					// check if it's still possible to resolve the problem from here onward
+					if(machineCopy.JoltageRequirements!
+						.Any(j =>
+							j.CanBeIncreased
+							&& j.Buttons!.Count == 0)
+						) {
+						// there are uncompleted joltages without buttons to press them
+						continue;
+					}
+
+					// output
+					s_progress_stopWatch ??= Stopwatch.StartNew();
+					if(s_progress_stopWatch!.ElapsedMilliseconds >= 5000) {
+						Console.WriteLine($"{s_progressMessagePrefix} {GetOutputPath_AsProgress_BFS()}.");
+						s_progress_stopWatch.Restart();
+					}
+
+					long? pressesFurtherDown = machineCopy.TryGetFewestButtonPressesForPartTwo();
+					if(pressesFurtherDown != null
+						&& (bestPressesFurtherDown == null
+							|| pressesFurtherDown.Value < bestPressesFurtherDown.Value)
+						) {
+						bestPressesFurtherDown = initialPresses + pressesFurtherDown.Value;
+					}
+				}
+				if(bestPressesFurtherDown == null) {
+					// impossible
 					return null;
 				}
 
-				buttonPressesCount += pressesFurtherDown.Value;
+				buttonPressesCount += bestPressesFurtherDown.Value;
 				break;
 			}
 		}
@@ -411,7 +447,7 @@ class Machine
 		PressedButtons.Add(pressedButton);
 
 		if(Output.DebuggingPartTwo) {
-			Console.WriteLine($"Joltages: {{{string.Join(",", JoltageRequirements!)}}}. Path {GetOutputPath_AsTrace()}: Buttons: {string.Join(" ", PressedButtons.Reverse<Button>().Select(b => $"{b.PressesCount}x{b}"))}");
+			Console.WriteLine($"Button pressed. Joltages: {{{string.Join(",", JoltageRequirements!)}}}. Path {GetOutputPath_AsTrace()}: Buttons: {string.Join(" ", PressedButtons.Reverse<Button>().Select(b => $"{b.PressesCount}x{b}"))}");
 		}
 
 		if(pressedButton.AffectsAMaxedOutJoltage) {
@@ -432,10 +468,16 @@ class Machine
 		return string.Join("=>", path.Select(m => m.Id));
 	}
 
-	private string GetOutputPath_AsProgress()
+	private string GetOutputPath_AsProgress_BeforeBFS()
 	{
 		List<Machine> path = GetPathToHere();
 		return string.Join("=>", path.Select(m => $"(S={m.subtractPressesCount}/{m.maxSubtract}. B={m.output_buttonIndex}/{m.output_buttonCount}.)"));
+	}
+
+	private string GetOutputPath_AsProgress_BFS()
+	{
+		List<Machine> path = GetPathToHere();
+		return string.Join($" => ", path.Select(m => $"({m.output_machineCopyIndex+1}/{m.output_machineCopiesCount})"));
 	}
 
 	private List<Machine> GetPathToHere()
