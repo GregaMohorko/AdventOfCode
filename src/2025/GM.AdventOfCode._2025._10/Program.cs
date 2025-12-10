@@ -330,56 +330,36 @@ class Machine
 				// priority order
 				buttonsThatCanBePressed = buttonsThatCanBePressed
 					// start with those buttons that can be pressed the least amount of times
-					//.OrderBy(b => b.AvailablePressesCount)
+					.OrderBy(b => b.AvailablePressesCount)
 					// start with those that affect the most number of joltages
 					//.OrderByDescending(b => b.Joltages!.Count)
 					// start with those that affect the least number of joltages
-					.OrderBy(b => b.Joltages!.Count)
+					//.OrderBy(b => b.Joltages!.Count)
 					.ToList();
 
 				List<(Machine Machine, Button ButtonToPress, int PressCount)> copiesFurtherDown = [];
 				// this subtract is stupid, could be determined more smarter
 				maxSubtract = buttonsThatCanBePressed.Max(b => b.AvailablePressesCount) - 1;
+
 				if(Id < Output.InitialMachinesCount) {
 					s_progressMessagePrefix = $"Machine {Id}:";
 				}
-				for(subtractPressesCount = 0; ; ++subtractPressesCount) {
-					bool skippedAll = true;
-					output_buttonCount = buttonsThatCanBePressed.Count;
-					for(int i = 0; i < buttonsThatCanBePressed.Count; ++i) {
-						output_buttonIndex = i + 1;
-						var buttonThatCanBePressed = buttonsThatCanBePressed[i];
+				output_buttonCount = buttonsThatCanBePressed.Count;
+				for(int i = 0; i < buttonsThatCanBePressed.Count; ++i) {
+					output_buttonIndex = i + 1;
+					var buttonThatCanBePressed = buttonsThatCanBePressed[i];
 
+					for(subtractPressesCount = 0; subtractPressesCount <= maxSubtract; ++subtractPressesCount) {
 						int pressCount = buttonThatCanBePressed.AvailablePressesCount - subtractPressesCount;
 						if(pressCount <= 0) {
 							continue;
 						}
-						skippedAll = false;
-
-						// output before going to BFS
-						//if(Output.ProgressPartTwo) {
-						//	// only output initial machines
-						//	if(Id < Output.InitialMachinesCount) {
-						//		s_progressMessagePrefix += $" (Subtract={subtractPressesCount}/{maxSubtract}. Button={output_buttonIndex}/{output_buttonCount}.)";
-						//		Console.WriteLine(s_progressMessagePrefix);
-						//		s_progress_stopWatch = new();
-						//		s_progress_stopWatch.Start();
-						//	} else {
-						//		if(s_progress_stopWatch!.ElapsedMilliseconds >= 5000) {
-						//			Console.WriteLine($"{s_progressMessagePrefix} Path={GetOutputPath_AsProgress()}. (Subtract={subtractPressesCount}/{maxSubtract}. Button={output_buttonIndex}/{output_buttonCount}.)");
-						//			s_progress_stopWatch.Restart();
-						//		}
-						//	}
-						//}
 
 						var machineCopy = new Machine(this);
 						machineCopy.InitializeJoltagesAndButtons();
 
 						// should continue further down
 						copiesFurtherDown.Add((machineCopy, buttonThatCanBePressed, pressCount));
-					}
-					if(skippedAll) {
-						break;
 					}
 				}
 
